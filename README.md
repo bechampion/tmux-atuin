@@ -4,7 +4,7 @@ A beautiful, fast shell history search plugin that combines the power of [Atuin]
 
 > **Note:** This project was 100% vibe coded using [OpenCode](https://opencode.ai) and Claude 🤖✨
 
-![tmux-atuin](./assets/1.png)
+![tmux-atuin](./assets/2.png)
 
 ## ✨ Features
 
