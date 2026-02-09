@@ -51,7 +51,6 @@ _atuin_tmux_popup() {
                 "$c_cmd" "$cmd" "$c_reset"
         done | fzf \
             --ansi \
-            --exact \
             --no-sort \
             --layout=reverse \
             --query="$query" \
@@ -115,7 +114,6 @@ selection=\$(sqlite3 -separator \$'\t' "\$db" "\$sql" 2>/dev/null | while IFS=\$
         "\$c_cmd" "\$cmd" "\$c_reset"
 done | fzf \\
     --ansi \\
-    --exact \\
     --no-sort \\
     --layout=reverse \\
     --query="$query" \\
