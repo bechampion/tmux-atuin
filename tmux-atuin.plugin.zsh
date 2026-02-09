@@ -181,7 +181,7 @@ INNERSCRIPT
     
     chmod +x "$wrapper"
     
-    # Run in tmux popup - quake style (full width, drops from top)
+    # Run in tmux popup
     tmux display-popup -E -w 80% -h 60% \
         -b rounded \
         -S 'fg=#54546D' \
@@ -240,7 +240,7 @@ _edit_command_line_popup() {
         return
     fi
     
-    # Run nvim in tmux popup - quake style (smaller)
+    # Run nvim in tmux popup
     tmux display-popup -E -w 50% -h 40% \
         -b rounded \
         -S 'fg=#54546D' \
@@ -279,10 +279,21 @@ _zoxide_tmux_popup() {
     
     local tmpfile=$(mktemp)
     
+    # Kanagawa colors
+    local c_score=$'\033[38;2;230;195;132m'    # carpYellow - for score
+    local c_sep=$'\033[38;2;84;84;109m'        # sumiInk4 - dim separator
+    local c_path=$'\033[38;2;220;215;186m'     # fujiWhite - for path
+    local c_reset=$'\033[0m'
+    
+    # Preview command for bat
+    local preview_cmd='dir=$(echo {} | sed "s/\x1b\[[0-9;]*m//g" | sed "s/^[^│]*│ //"); ls -la --color=always "$dir" 2>/dev/null | head -50'
+    
     if [[ -z "$TMUX" ]]; then
         # Not in tmux - run fzf directly
         local selection
-        selection=$(zoxide query -l 2>/dev/null | fzf \
+        selection=$(zoxide query -ls 2>/dev/null | while read -r score path; do
+            printf '%s%7.1f %s│%s %s%s%s\n' "$c_score" "$score" "$c_sep" "$c_reset" "$c_path" "$path" "$c_reset"
+        done | fzf \
             --ansi \
             --exact \
             --no-sort \
@@ -294,7 +305,13 @@ _zoxide_tmux_popup() {
             --no-separator \
             --pointer='▸' \
             --prompt='❯ ' \
-            --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8')
+            --nth=2.. \
+            --preview "$preview_cmd" \
+            --preview-window 'right:50%:border-left' \
+            --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8,preview-bg:#1F1F28,preview-border:#54546D')
+        
+        # Extract path (strip ANSI and get text after │)
+        selection=$(echo "$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│ //')
         
         if [[ -n "$selection" ]]; then
             zoxide add "$selection" 2>/dev/null
@@ -306,26 +323,39 @@ _zoxide_tmux_popup() {
     
     # Create wrapper for tmux popup
     local wrapper=$(mktemp)
-    cat > "$wrapper" << INNERSCRIPT
+    cat > "$wrapper" << 'INNERSCRIPT'
 #!/bin/bash
-tmpfile="$tmpfile"
-zoxide query -l 2>/dev/null | fzf \\
-    --ansi \\
-    --exact \\
-    --no-sort \\
-    --layout=reverse \\
-    --bind 'esc:abort' \\
-    --bind 'ctrl-d:half-page-down' \\
-    --bind 'ctrl-u:half-page-up' \\
-    --no-info \\
-    --no-separator \\
-    --pointer='▸' \\
-    --prompt='❯ ' \\
-    --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8' > "\$tmpfile"
+tmpfile="TMPFILE_PLACEHOLDER"
+
+c_score=$'\033[38;2;230;195;132m'
+c_sep=$'\033[38;2;84;84;109m'
+c_path=$'\033[38;2;220;215;186m'
+c_reset=$'\033[0m'
+
+zoxide query -ls 2>/dev/null | while read -r score path; do
+    printf '%s%7.1f %s│%s %s%s%s\n' "$c_score" "$score" "$c_sep" "$c_reset" "$c_path" "$path" "$c_reset"
+done | fzf \
+    --ansi \
+    --exact \
+    --no-sort \
+    --layout=reverse \
+    --bind 'esc:abort' \
+    --bind 'ctrl-d:half-page-down' \
+    --bind 'ctrl-u:half-page-up' \
+    --no-info \
+    --no-separator \
+    --pointer='▸' \
+    --prompt='❯ ' \
+    --nth=2.. \
+    --preview 'dir=$(echo {} | sed "s/\x1b\[[0-9;]*m//g" | sed "s/^[^│]*│ //"); ls -la --color=always "$dir" 2>/dev/null | head -50' \
+    --preview-window 'right:50%:border-left' \
+    --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8,preview-bg:#1F1F28,preview-border:#54546D' | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│ //' > "$tmpfile"
 INNERSCRIPT
+    # Replace placeholder with actual tmpfile path
+    sed -i "s|TMPFILE_PLACEHOLDER|$tmpfile|g" "$wrapper"
     chmod +x "$wrapper"
     
-    # Run in tmux popup - quake style (full width, drops from top)
+    # Run in tmux popup
     tmux display-popup -E -w 80% -h 60% \
         -b rounded \
         -S 'fg=#54546D' \
