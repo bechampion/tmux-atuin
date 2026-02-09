@@ -15,6 +15,7 @@ A beautiful, fast shell history search plugin that combines the power of [Atuin]
 - **📊 Rich Information** - Shows relative time and duration for each command
 - **🪟 tmux Integration** - Opens in a beautiful floating tmux popup
 - **✏️ Edit in Neovim** - Press `Ctrl+x` to edit the selected command in nvim before executing
+- **📝 Edit Command Line** - Press `Ctrl+x Ctrl+e` to edit the current command line in a nvim popup
 - **⚡ Async Loading** - Can be loaded asynchronously with `zsh-defer` for instant shell startup
 
 ## 📋 Requirements
@@ -24,7 +25,7 @@ A beautiful, fast shell history search plugin that combines the power of [Atuin]
 - [fzf](https://github.com/junegunn/fzf) (fuzzy finder)
 - [sqlite3](https://sqlite.org/) (for direct database queries)
 - [zsh](https://www.zsh.org/) (shell)
-- [neovim](https://neovim.io/) (optional, for edit feature)
+- [neovim](https://neovim.io/) (optional, for edit features)
 
 ## 📦 Installation
 
@@ -73,6 +74,8 @@ zplug "bechampion/tmux-atuin"
 
 ## ⌨️ Key Bindings
 
+### History Search (`Ctrl+r`)
+
 | Key | Action |
 |-----|--------|
 | `Ctrl+r` | Open history search popup |
@@ -82,6 +85,14 @@ zplug "bechampion/tmux-atuin"
 | `Enter` | Select command and paste to prompt |
 | `Esc` | Close popup |
 | `Ctrl+c` | Close popup |
+
+### Edit Command Line (`Ctrl+x Ctrl+e`)
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+x Ctrl+e` | Open current command line in nvim popup for editing |
+
+This is similar to bash/zsh's `edit-command-line` but opens in a beautiful tmux popup with syntax highlighting. Perfect for editing long or complex commands!
 
 ## 🎨 Color Scheme
 

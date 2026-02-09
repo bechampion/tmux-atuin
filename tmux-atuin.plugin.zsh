@@ -204,5 +204,76 @@ INNERSCRIPT
     zle reset-prompt
 }
 
+# Edit current command line in nvim popup (C-x C-e)
+_edit_command_line_popup() {
+    emulate -L zsh
+    zle -I
+    
+    local tmpfile=$(mktemp)
+    local current_cmd="${LBUFFER}${RBUFFER}"
+    
+    # Write current command to temp file
+    printf '%s' "$current_cmd" > "$tmpfile"
+    
+    if [[ -z "$TMUX" ]]; then
+        # Not in tmux - run nvim directly
+        nvim -u NONE \
+            -c "set noswapfile" \
+            -c "set nobackup" \
+            -c "set noundofile" \
+            -c "set laststatus=0" \
+            -c "set noruler" \
+            -c "set noshowcmd" \
+            -c "set shortmess+=F" \
+            -c "set filetype=sh" \
+            -c "syntax on" \
+            "$tmpfile"
+        
+        local edited=$(cat "$tmpfile")
+        rm -f "$tmpfile"
+        
+        if [[ -n "$edited" ]]; then
+            LBUFFER="$edited"
+            RBUFFER=""
+        fi
+        zle reset-prompt
+        return
+    fi
+    
+    # Run nvim in tmux popup
+    tmux display-popup -E -w 50% -h 40% \
+        -b rounded \
+        -S 'fg=#54546D' \
+        -s 'bg=#1F1F28' \
+        -T ' ✏️ Edit Command ' \
+        "nvim -u NONE \
+            -c 'set noswapfile' \
+            -c 'set nobackup' \
+            -c 'set noundofile' \
+            -c 'set laststatus=0' \
+            -c 'set noruler' \
+            -c 'set noshowcmd' \
+            -c 'set shortmess+=F' \
+            -c 'set filetype=sh' \
+            -c 'syntax on' \
+            '$tmpfile'"
+    
+    local edited=$(cat "$tmpfile" 2>/dev/null)
+    rm -f "$tmpfile"
+    
+    # Trim trailing newlines
+    edited="${edited%%$'\n'}"
+    
+    if [[ -n "$edited" ]]; then
+        LBUFFER="$edited"
+        RBUFFER=""
+    fi
+    
+    zle reset-prompt
+}
+
 zle -N _atuin_tmux_popup
+zle -N _edit_command_line_popup
+
 bindkey '^r' _atuin_tmux_popup
+bindkey '^x^e' _edit_command_line_popup
