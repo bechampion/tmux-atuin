@@ -181,7 +181,7 @@ INNERSCRIPT
     
     chmod +x "$wrapper"
     
-    # Run in tmux popup with Kanagawa colors
+    # Run in tmux popup - quake style (full width, drops from top)
     tmux display-popup -E -w 80% -h 60% \
         -b rounded \
         -S 'fg=#54546D' \
@@ -240,7 +240,7 @@ _edit_command_line_popup() {
         return
     fi
     
-    # Run nvim in tmux popup
+    # Run nvim in tmux popup - quake style (smaller)
     tmux display-popup -E -w 50% -h 40% \
         -b rounded \
         -S 'fg=#54546D' \
@@ -272,8 +272,86 @@ _edit_command_line_popup() {
     zle reset-prompt
 }
 
+# Zoxide directory jump in tmux popup (C-g)
+_zoxide_tmux_popup() {
+    emulate -L zsh
+    zle -I
+    
+    local tmpfile=$(mktemp)
+    
+    if [[ -z "$TMUX" ]]; then
+        # Not in tmux - run fzf directly
+        local selection
+        selection=$(zoxide query -l 2>/dev/null | fzf \
+            --ansi \
+            --exact \
+            --no-sort \
+            --layout=reverse \
+            --bind 'esc:abort' \
+            --bind 'ctrl-d:half-page-down' \
+            --bind 'ctrl-u:half-page-up' \
+            --no-info \
+            --no-separator \
+            --pointer='▸' \
+            --prompt='❯ ' \
+            --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8')
+        
+        if [[ -n "$selection" ]]; then
+            zoxide add "$selection" 2>/dev/null
+            cd "$selection"
+        fi
+        zle reset-prompt
+        return
+    fi
+    
+    # Create wrapper for tmux popup
+    local wrapper=$(mktemp)
+    cat > "$wrapper" << INNERSCRIPT
+#!/bin/bash
+tmpfile="$tmpfile"
+zoxide query -l 2>/dev/null | fzf \\
+    --ansi \\
+    --exact \\
+    --no-sort \\
+    --layout=reverse \\
+    --bind 'esc:abort' \\
+    --bind 'ctrl-d:half-page-down' \\
+    --bind 'ctrl-u:half-page-up' \\
+    --no-info \\
+    --no-separator \\
+    --pointer='▸' \\
+    --prompt='❯ ' \\
+    --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8' > "\$tmpfile"
+INNERSCRIPT
+    chmod +x "$wrapper"
+    
+    # Run in tmux popup - quake style (full width, drops from top)
+    tmux display-popup -E -w 80% -h 60% \
+        -b rounded \
+        -S 'fg=#54546D' \
+        -s 'bg=#1F1F28' \
+        -T ' 📁 Zoxide Jump ' \
+        "$wrapper"
+    
+    local selection=$(cat "$tmpfile" 2>/dev/null)
+    rm -f "$tmpfile" "$wrapper"
+    
+    # Trim whitespace
+    selection="${selection%%$'\n'}"
+    selection="${selection%"${selection##*[![:space:]]}"}"
+    
+    if [[ -n "$selection" ]]; then
+        zoxide add "$selection" 2>/dev/null
+        cd "$selection"
+    fi
+    
+    zle reset-prompt
+}
+
 zle -N _atuin_tmux_popup
 zle -N _edit_command_line_popup
+zle -N _zoxide_tmux_popup
 
 bindkey '^r' _atuin_tmux_popup
 bindkey '^x^e' _edit_command_line_popup
+bindkey '^g' _zoxide_tmux_popup

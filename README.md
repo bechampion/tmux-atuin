@@ -16,6 +16,7 @@ A beautiful, fast shell history search plugin that combines the power of [Atuin]
 - **🪟 tmux Integration** - Opens in a beautiful floating tmux popup
 - **✏️ Edit in Neovim** - Press `Ctrl+x` to edit the selected command in nvim before executing
 - **📝 Edit Command Line** - Press `Ctrl+x Ctrl+e` to edit the current command line in a nvim popup
+- **📁 Zoxide Integration** - Press `Ctrl+g` to jump to directories with zoxide in a popup
 - **⚡ Async Loading** - Can be loaded asynchronously with `zsh-defer` for instant shell startup
 
 ## 📋 Requirements
@@ -26,6 +27,7 @@ A beautiful, fast shell history search plugin that combines the power of [Atuin]
 - [sqlite3](https://sqlite.org/) (for direct database queries)
 - [zsh](https://www.zsh.org/) (shell)
 - [neovim](https://neovim.io/) (optional, for edit features)
+- [zoxide](https://github.com/ajeetdsouza/zoxide) (optional, for directory jumping)
 
 ## 📦 Installation
 
@@ -94,6 +96,18 @@ zplug "bechampion/tmux-atuin"
 
 This is similar to bash/zsh's `edit-command-line` but opens in a beautiful tmux popup with syntax highlighting. Perfect for editing long or complex commands!
 
+### Zoxide Directory Jump (`Ctrl+g`)
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+g` | Open zoxide directory list in popup |
+| `Ctrl+d` | Page down (half page) |
+| `Ctrl+u` | Page up (half page) |
+| `Enter` | Jump to selected directory |
+| `Esc` | Close popup |
+
+Quickly jump to any directory in your zoxide database with fuzzy search!
+
 ## 🎨 Color Scheme
 
 The plugin uses the beautiful [Kanagawa](https://github.com/rebelot/kanagawa.nvim) color palette:
@@ -151,6 +165,7 @@ LIMIT 3000
 - [tmux-ghostcomplete](https://github.com/bechampion/tmux-ghostcomplete) - Screen-aware autocomplete in tmux popup
 - [Atuin](https://github.com/atuinsh/atuin) - Magical shell history
 - [fzf](https://github.com/junegunn/fzf) - Command-line fuzzy finder
+- [zoxide](https://github.com/ajeetdsouza/zoxide) - A smarter cd command
 - [Kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) - Dark colorscheme inspired by Katsushika Hokusai
 
 ## 📄 License
@@ -161,6 +176,7 @@ MIT License - See [LICENSE](./LICENSE) for details.
 
 - [Atuin](https://github.com/atuinsh/atuin) for the amazing shell history sync
 - [fzf](https://github.com/junegunn/fzf) for the fuzzy finder
+- [zoxide](https://github.com/ajeetdsouza/zoxide) for smart directory jumping
 - [Kanagawa](https://github.com/rebelot/kanagawa.nvim) for the beautiful color palette
 - [zsh-defer](https://github.com/romkatv/zsh-defer) for async loading
 - [OpenCode](https://opencode.ai) + Claude for the vibe coding session that created this ✨
