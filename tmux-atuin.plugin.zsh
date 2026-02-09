@@ -10,6 +10,7 @@ _atuin_tmux_popup() {
     zle -I
     
     local tmpfile=$(mktemp)
+    local editfile=$(mktemp)
     local query="$BUFFER"
     local db="$HOME/.local/share/atuin/history.db"
     
@@ -58,6 +59,7 @@ _atuin_tmux_popup() {
             --bind 'esc:abort' \
             --bind 'ctrl-d:half-page-down' \
             --bind 'ctrl-u:half-page-up' \
+            --bind 'ctrl-x:become(echo EDIT:{})' \
             --no-info \
             --no-separator \
             --pointer='▸' \
@@ -65,8 +67,29 @@ _atuin_tmux_popup() {
             --nth=3.. \
             --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8')
         
-        # Strip ANSI codes, then extract command (after second │)
-        selection=$(echo "$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│[^│]*│ //')
+        # Check if edit mode
+        if [[ "$selection" == EDIT:* ]]; then
+            selection="${selection#EDIT:}"
+            selection=$(echo "$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│[^│]*│ //')
+            echo "$selection" > "$editfile"
+            nvim -u NONE \
+                -c "set noswapfile" \
+                -c "set nobackup" \
+                -c "set noundofile" \
+                -c "set laststatus=0" \
+                -c "set noruler" \
+                -c "set noshowcmd" \
+                -c "set shortmess+=F" \
+                -c "set filetype=sh" \
+                -c "syntax on" \
+                "$editfile"
+            selection=$(cat "$editfile")
+        else
+            # Strip ANSI codes, then extract command (after second │)
+            selection=$(echo "$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│[^│]*│ //')
+        fi
+        
+        rm -f "$editfile"
         
         if [[ -n "$selection" ]]; then
             LBUFFER="$selection"
@@ -81,6 +104,9 @@ _atuin_tmux_popup() {
     cat > "$wrapper" << INNERSCRIPT
 #!/bin/bash
 db="\$HOME/.local/share/atuin/history.db"
+tmpfile="$tmpfile"
+editfile="$editfile"
+
 sql="
     SELECT 
         CASE 
@@ -114,14 +140,15 @@ selection=\$(sqlite3 -separator \$'\t' "\$db" "\$sql" 2>/dev/null | while IFS=\$
         "\$c_dur" "\$dur" "\$c_sep" "\$c_reset" \\
         "\$c_cmd" "\$cmd" "\$c_reset"
 done | fzf \\
-    --ansi \
-            --exact \\
+    --ansi \\
+    --exact \\
     --no-sort \\
     --layout=reverse \\
     --query="$query" \\
     --bind 'esc:abort' \\
     --bind 'ctrl-d:half-page-down' \\
     --bind 'ctrl-u:half-page-up' \\
+    --bind 'ctrl-x:become(echo EDIT:{})' \\
     --no-info \\
     --no-separator \\
     --pointer='▸' \\
@@ -129,8 +156,27 @@ done | fzf \\
     --nth=3.. \\
     --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8')
 
-# Strip ANSI codes, then extract command (after second │)
-echo "\$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│[^│]*│ //' > "$tmpfile"
+# Check if edit mode
+if [[ "\$selection" == EDIT:* ]]; then
+    selection="\${selection#EDIT:}"
+    selection=\$(echo "\$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│[^│]*│ //')
+    echo "\$selection" > "\$editfile"
+    nvim -u NONE \\
+        -c "set noswapfile" \\
+        -c "set nobackup" \\
+        -c "set noundofile" \\
+        -c "set laststatus=0" \\
+        -c "set noruler" \\
+        -c "set noshowcmd" \\
+        -c "set shortmess+=F" \\
+        -c "set filetype=sh" \\
+        -c "syntax on" \\
+        "\$editfile"
+    cat "\$editfile" > "\$tmpfile"
+else
+    # Strip ANSI codes, then extract command (after second │)
+    echo "\$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│[^│]*│ //' > "\$tmpfile"
+fi
 INNERSCRIPT
     
     chmod +x "$wrapper"
@@ -144,7 +190,7 @@ INNERSCRIPT
         "$wrapper"
     
     local selection=$(cat "$tmpfile" 2>/dev/null)
-    rm -f "$tmpfile" "$wrapper"
+    rm -f "$tmpfile" "$wrapper" "$editfile"
     
     # Trim trailing whitespace/newlines
     selection="${selection%%$'\n'}"

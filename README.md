@@ -14,6 +14,7 @@ A beautiful, fast shell history search plugin that combines the power of [Atuin]
 - **🔄 Deduplicated** - No duplicate commands cluttering your history
 - **📊 Rich Information** - Shows relative time and duration for each command
 - **🪟 tmux Integration** - Opens in a beautiful floating tmux popup
+- **✏️ Edit in Neovim** - Press `Ctrl+x` to edit the selected command in nvim before executing
 - **⚡ Async Loading** - Can be loaded asynchronously with `zsh-defer` for instant shell startup
 
 ## 📋 Requirements
@@ -23,6 +24,7 @@ A beautiful, fast shell history search plugin that combines the power of [Atuin]
 - [fzf](https://github.com/junegunn/fzf) (fuzzy finder)
 - [sqlite3](https://sqlite.org/) (for direct database queries)
 - [zsh](https://www.zsh.org/) (shell)
+- [neovim](https://neovim.io/) (optional, for edit feature)
 
 ## 📦 Installation
 
@@ -76,6 +78,7 @@ zplug "bechampion/tmux-atuin"
 | `Ctrl+r` | Open history search popup |
 | `Ctrl+d` | Page down (half page) |
 | `Ctrl+u` | Page up (half page) |
+| `Ctrl+x` | Edit selected command in nvim |
 | `Enter` | Select command and paste to prompt |
 | `Esc` | Close popup |
 | `Ctrl+c` | Close popup |
@@ -105,6 +108,7 @@ Unlike traditional shell history search, tmux-atuin:
 3. **Deduplicates intelligently** - Groups by command and shows the most recent occurrence
 4. **Formats beautifully** - Adds colors via ANSI escape codes before passing to fzf
 5. **Extracts cleanly** - Strips metadata when pasting to ensure only the command is inserted
+6. **Edit before execute** - Press `Ctrl+x` to open the command in nvim, edit it, and paste the result
 
 ### The SQL Query
 
