@@ -286,7 +286,7 @@ _zoxide_tmux_popup() {
     local c_reset=$'\033[0m'
     
     # Preview command for bat
-    local preview_cmd='dir=$(echo {} | sed "s/\x1b\[[0-9;]*m//g" | sed "s/^[^│]*│ //"); ls -la --color=always "$dir" 2>/dev/null | head -50'
+    local preview_cmd='dir=$(echo {} | sed "s/\x1b\[[0-9;]*m//g" | sed "s/^[^│]*│ //"); eza -la --color=always --icons --git "$dir" 2>/dev/null'
     
     if [[ -z "$TMUX" ]]; then
         # Not in tmux - run fzf directly
@@ -347,7 +347,7 @@ done | fzf \
     --pointer='▸' \
     --prompt='❯ ' \
     --nth=2.. \
-    --preview 'dir=$(echo {} | sed "s/\x1b\[[0-9;]*m//g" | sed "s/^[^│]*│ //"); ls -la --color=always "$dir" 2>/dev/null | head -50' \
+    --preview 'dir=$(echo {} | sed "s/\x1b\[[0-9;]*m//g" | sed "s/^[^│]*│ //"); eza -la --color=always --icons --git "$dir" 2>/dev/null' \
     --preview-window 'right:50%:border-left' \
     --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8,preview-bg:#1F1F28,preview-border:#54546D' | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│ //' > "$tmpfile"
 INNERSCRIPT
