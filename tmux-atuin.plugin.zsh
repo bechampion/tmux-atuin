@@ -52,7 +52,7 @@ _atuin_tmux_popup() {
                 "$c_cmd" "$cmd" "$c_reset"
         done | fzf \
             --ansi \
-            --exact \
+            --algo=v2 --tiebreak=begin,length,index \
             --no-sort \
             --layout=reverse \
             --query="$query" \
@@ -141,8 +141,8 @@ selection=\$(sqlite3 -separator \$'\t' "\$db" "\$sql" 2>/dev/null | while IFS=\$
         "\$c_cmd" "\$cmd" "\$c_reset"
 done | fzf \\
     --ansi \\
-    --exact \\
-    --no-sort \\
+    --algo=v2 --tiebreak=begin,length,index \\
+    \\
     --layout=reverse \\
     --query="$query" \\
     --bind 'esc:abort' \\
@@ -294,7 +294,7 @@ _zoxide_tmux_popup() {
             printf '%s%7.1f %s│%s %s%s%s\n' "$c_score" "$score" "$c_sep" "$c_reset" "$c_path" "$path" "$c_reset"
         done | fzf \
             --ansi \
-            --exact \
+            --algo=v2 --tiebreak=begin,length,index \
             --no-sort \
             --layout=reverse \
             --bind 'esc:abort' \
@@ -333,7 +333,7 @@ zoxide query -ls 2>/dev/null | while read -r score path; do
     printf '%s%7.1f %s│%s %s%s%s\n' "$c_score" "$score" "$c_sep" "$c_reset" "$c_path" "$path" "$c_reset"
 done | fzf \
     --ansi \
-    --exact \
+    --algo=v2 --tiebreak=begin,length,index \
     --no-sort \
     --layout=reverse \
     --bind 'esc:abort' \
