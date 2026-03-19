@@ -1,7 +1,7 @@
 # tmux-atuin.plugin.zsh
 # Open atuin history search via fzf in a styled tmux popup
 # Triggered with Ctrl+r
-# Uses same Kanagawa color scheme as tmux-ghostcomplete
+# Uses same Tokyo Night color scheme as tmux-ghostcomplete
 # Only shows commands with exit code 0 (successful commands)
 # Queries sqlite directly for speed
 
@@ -35,11 +35,11 @@ _atuin_tmux_popup() {
         LIMIT 3000
     "
     
-    # Kanagawa colors - full palette
-    local c_time=$'\033[38;2;127;180;202m'     # springBlue - soft blue for time
-    local c_dur=$'\033[38;2;152;187;108m'      # springGreen - green for duration
-    local c_cmd=$'\033[38;2;220;215;186m'      # fujiWhite - white for command
-    local c_sep=$'\033[38;2;84;84;109m'        # sumiInk4 - dim separator
+    # Tokyo Night colors - full palette
+    local c_time=$'\033[38;2;125;207;255m'     # blue (7dcfff) - soft blue for time
+    local c_dur=$'\033[38;2;158;206;106m'      # green (9ece6a) - green for duration
+    local c_cmd=$'\033[38;2;192;202;245m'      # fg (c0caf5) - white for command
+    local c_sep=$'\033[38;2;86;95;137m'        # comment (565f89) - dim separator
     local c_reset=$'\033[0m'
     
     if [[ -z "$TMUX" ]]; then
@@ -65,7 +65,7 @@ _atuin_tmux_popup() {
             --pointer='▸' \
             --prompt='❯ ' \
             --nth=3.. \
-            --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8')
+            --color='bg:#1a1b26,fg:#c0caf5,bg+:#24283b,fg+:#c0caf5,hl:#e0af68,hl+:#ff9e64,pointer:#e0af68,prompt:#bb9af7,gutter:#1a1b26,border:#565f89,label:#7aa2f7,header:#bb9af7')
         
         # Check if edit mode
         if [[ "$selection" == EDIT:* ]]; then
@@ -127,11 +127,11 @@ sql="
     LIMIT 3000
 "
 
-# Kanagawa colors - full palette
-c_time=\$'\033[38;2;127;180;202m'     # springBlue
-c_dur=\$'\033[38;2;152;187;108m'      # springGreen
-c_cmd=\$'\033[38;2;220;215;186m'      # fujiWhite
-c_sep=\$'\033[38;2;84;84;109m'        # sumiInk4
+# Tokyo Night colors - full palette
+c_time=\$'\033[38;2;125;207;255m'     # blue (7dcfff)
+c_dur=\$'\033[38;2;158;206;106m'      # green (9ece6a)
+c_cmd=\$'\033[38;2;192;202;245m'      # fg (c0caf5)
+c_sep=\$'\033[38;2;86;95;137m'        # comment (565f89)
 c_reset=\$'\033[0m'
 
 selection=\$(sqlite3 -separator \$'\t' "\$db" "\$sql" 2>/dev/null | while IFS=\$'\t' read -r time dur cmd; do
@@ -154,7 +154,7 @@ done | fzf \\
     --pointer='▸' \\
     --prompt='❯ ' \\
     --nth=3.. \\
-    --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8')
+    --color='bg:#1a1b26,fg:#c0caf5,bg+:#24283b,fg+:#c0caf5,hl:#e0af68,hl+:#ff9e64,pointer:#e0af68,prompt:#bb9af7,gutter:#1a1b26,border:#565f89,label:#7aa2f7,header:#bb9af7')
 
 # Check if edit mode
 if [[ "\$selection" == EDIT:* ]]; then
@@ -184,8 +184,8 @@ INNERSCRIPT
     # Run in tmux popup
     tmux display-popup -E -w 80% -h 60% \
         -b rounded \
-        -S 'fg=#54546D' \
-        -s 'bg=#1F1F28' \
+        -S 'fg=#565f89' \
+        -s 'bg=#1a1b26' \
         -T ' 🐙 Atuin History ' \
         "$wrapper"
     
@@ -243,8 +243,8 @@ _edit_command_line_popup() {
     # Run nvim in tmux popup
     tmux display-popup -E -w 50% -h 40% \
         -b rounded \
-        -S 'fg=#54546D' \
-        -s 'bg=#1F1F28' \
+        -S 'fg=#565f89' \
+        -s 'bg=#1a1b26' \
         -T ' ✏️ Edit Command ' \
         "nvim -u NONE \
             -c 'set noswapfile' \
@@ -279,10 +279,10 @@ _zoxide_tmux_popup() {
     
     local tmpfile=$(mktemp)
     
-    # Kanagawa colors
-    local c_score=$'\033[38;2;230;195;132m'    # carpYellow - for score
-    local c_sep=$'\033[38;2;84;84;109m'        # sumiInk4 - dim separator
-    local c_path=$'\033[38;2;220;215;186m'     # fujiWhite - for path
+    # Tokyo Night colors
+    local c_score=$'\033[38;2;224;175;104m'    # yellow (e0af68) - for score
+    local c_sep=$'\033[38;2;86;95;137m'        # comment (565f89) - dim separator
+    local c_path=$'\033[38;2;192;202;245m'     # fg (c0caf5) - for path
     local c_reset=$'\033[0m'
     
     # Preview command for bat
@@ -305,7 +305,7 @@ _zoxide_tmux_popup() {
             --pointer='▸' \
             --prompt='❯ ' \
             --nth=2.. \
-            --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8,preview-bg:#1F1F28,preview-border:#54546D')
+            --color='bg:#1a1b26,fg:#c0caf5,bg+:#24283b,fg+:#c0caf5,hl:#e0af68,hl+:#ff9e64,pointer:#e0af68,prompt:#bb9af7,gutter:#1a1b26,border:#565f89,label:#7aa2f7,header:#bb9af7,preview-bg:#1a1b26,preview-border:#565f89')
         
         # Extract path (strip ANSI and get text after │)
         selection=$(echo "$selection" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│ //')
@@ -324,9 +324,9 @@ _zoxide_tmux_popup() {
 #!/bin/bash
 tmpfile="TMPFILE_PLACEHOLDER"
 
-c_score=$'\033[38;2;230;195;132m'
-c_sep=$'\033[38;2;84;84;109m'
-c_path=$'\033[38;2;220;215;186m'
+c_score=$'\033[38;2;224;175;104m'
+c_sep=$'\033[38;2;86;95;137m'
+c_path=$'\033[38;2;192;202;245m'
 c_reset=$'\033[0m'
 
 zoxide query -ls 2>/dev/null | while read -r score path; do
@@ -344,7 +344,7 @@ done | fzf \
     --pointer='▸' \
     --prompt='❯ ' \
     --nth=2.. \
-    --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#FFA066,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#7E9CD8,header:#957FB8,preview-bg:#1F1F28,preview-border:#54546D' | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│ //' > "$tmpfile"
+    --color='bg:#1a1b26,fg:#c0caf5,bg+:#24283b,fg+:#c0caf5,hl:#e0af68,hl+:#ff9e64,pointer:#e0af68,prompt:#bb9af7,gutter:#1a1b26,border:#565f89,label:#7aa2f7,header:#bb9af7,preview-bg:#1a1b26,preview-border:#565f89' | sed 's/\x1b\[[0-9;]*m//g' | sed 's/^[^│]*│ //' > "$tmpfile"
 INNERSCRIPT
     # Replace placeholder with actual tmpfile path
     sed -i "s|TMPFILE_PLACEHOLDER|$tmpfile|g" "$wrapper"
@@ -353,8 +353,8 @@ INNERSCRIPT
     # Run in tmux popup
     tmux display-popup -E -w 80% -h 60% \
         -b rounded \
-        -S 'fg=#54546D' \
-        -s 'bg=#1F1F28' \
+        -S 'fg=#565f89' \
+        -s 'bg=#1a1b26' \
         -T ' 📁 Zoxide Jump ' \
         "$wrapper"
     
@@ -377,6 +377,7 @@ zle -N _atuin_tmux_popup
 zle -N _edit_command_line_popup
 zle -N _zoxide_tmux_popup
 
-bindkey '^r' _atuin_tmux_popup
+# Removed: ghostcomplete now owns Ctrl+r
+# bindkey '^r' _atuin_tmux_popup
 bindkey '^x^e' _edit_command_line_popup
 bindkey '^g' _zoxide_tmux_popup
