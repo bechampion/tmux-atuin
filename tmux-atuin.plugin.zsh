@@ -274,7 +274,7 @@ _zsh_history_tmux_popup() {
             END {
                 for (i = 1; i <= n && i <= 3000; i++) {
                     cmd = order[i]
-                    printf "%s%7s%s\t%s\n", c_time, rel(seen[cmd]), c_reset, cmd
+                    printf "%s%7s%s\t│ %s\n", c_time, rel(seen[cmd]), c_reset, cmd
                 }
             }
         ' > "$listfile"
@@ -282,7 +282,7 @@ _zsh_history_tmux_popup() {
 
     if [[ ! -s "$listfile" ]]; then
         # Fallback when history file doesn't contain extended timestamps
-        fc -rl 1 | sed -E 's/^[[:space:]]*[0-9]+\*?[[:space:]]+//' | awk '!seen[$0]++' | head -n 3000 | awk -v c_time="$c_time" -v c_reset="$c_reset" '{ printf "%s%7s%s\t%s\n", c_time, "-", c_reset, $0 }' > "$listfile"
+        fc -rl 1 | sed -E 's/^[[:space:]]*[0-9]+\*?[[:space:]]+//' | awk '!seen[$0]++' | head -n 3000 | awk -v c_time="$c_time" -v c_reset="$c_reset" '{ printf "%s%7s%s\t│ %s\n", c_time, "-", c_reset, $0 }' > "$listfile"
     fi
 
     if [[ -z "$TMUX" ]]; then
@@ -308,6 +308,7 @@ _zsh_history_tmux_popup() {
         if [[ "$selection" == EDIT:* ]]; then
             selection="${selection#EDIT:}"
             selection="${selection#*$'\t'}"
+            selection="${selection#│ }"
             printf '%s' "$selection" > "$editfile"
             nvim -u NONE \
                 -c "set noswapfile" \
@@ -323,6 +324,7 @@ _zsh_history_tmux_popup() {
             selection=$(cat "$editfile")
         else
             selection="${selection#*$'\t'}"
+            selection="${selection#│ }"
         fi
 
         rm -f "$editfile" "$listfile"
@@ -364,6 +366,7 @@ selection=\$(cat "\$listfile" | fzf \\
 if [[ "\$selection" == EDIT:* ]]; then
     selection="\${selection#EDIT:}"
     selection="\${selection#*$'\t'}"
+    selection="\${selection#│ }"
     printf '%s' "\$selection" > "\$editfile"
     nvim -u NONE \\
         -c "set noswapfile" \\
@@ -379,6 +382,7 @@ if [[ "\$selection" == EDIT:* ]]; then
     cat "\$editfile" > "\$tmpfile"
 else
     selection="\${selection#*$'\t'}"
+    selection="\${selection#│ }"
     printf '%s' "\$selection" > "\$tmpfile"
 fi
 INNERSCRIPT
