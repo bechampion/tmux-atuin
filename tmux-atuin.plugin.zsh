@@ -239,6 +239,173 @@ INNERSCRIPT
     zle reset-prompt
 }
 
+# Local zsh history search via fzf in a tmux popup (Ctrl-r)
+_zsh_history_tmux_popup() {
+    emulate -L zsh
+    zle -I
+
+    local tmpfile=$(mktemp)
+    local listfile=$(mktemp)
+    local editfile=$(mktemp)
+    local query="$BUFFER"
+
+    local c_time=$'\033[38;2;148;226;213m'   # teal
+    local c_reset=$'\033[0m'
+
+    # Newest first, deduplicated by exact command text, with colored relative last-run timestamp
+    if [[ -n "$HISTFILE" && -r "$HISTFILE" ]]; then
+        tac "$HISTFILE" | awk -v c_time="$c_time" -v c_reset="$c_reset" '
+            function rel(ts, now, age) {
+                now = systime()
+                age = now - ts
+                if (age < 60) return age "s ago"
+                if (age < 3600) return int(age/60) "m ago"
+                if (age < 86400) return int(age/3600) "h ago"
+                if (age < 604800) return int(age/86400) "d ago"
+                return int(age/604800) "w ago"
+            }
+            match($0, /^: ([0-9]+):[0-9]+;(.*)$/, m) {
+                cmd = m[2]
+                if (!(cmd in seen)) {
+                    seen[cmd] = m[1]
+                    order[++n] = cmd
+                }
+            }
+            END {
+                for (i = 1; i <= n && i <= 3000; i++) {
+                    cmd = order[i]
+                    printf "%s%7s%s\t%s\n", c_time, rel(seen[cmd]), c_reset, cmd
+                }
+            }
+        ' > "$listfile"
+    fi
+
+    if [[ ! -s "$listfile" ]]; then
+        # Fallback when history file doesn't contain extended timestamps
+        fc -rl 1 | sed -E 's/^[[:space:]]*[0-9]+\*?[[:space:]]+//' | awk '!seen[$0]++' | head -n 3000 | awk -v c_time="$c_time" -v c_reset="$c_reset" '{ printf "%s%7s%s\t%s\n", c_time, "-", c_reset, $0 }' > "$listfile"
+    fi
+
+    if [[ -z "$TMUX" ]]; then
+        local selection
+        selection=$(cat "$listfile" | fzf \
+            --ansi \
+            --exact \
+            --delimiter=$'\t' --nth=2.. \
+            --algo=v2 --tiebreak=begin,length,index \
+            --no-sort \
+            --layout=reverse \
+            --query="$query" \
+            --bind 'esc:abort' \
+            --bind 'ctrl-d:half-page-down' \
+            --bind 'ctrl-u:half-page-up' \
+            --bind 'ctrl-x:become(echo EDIT:{})' \
+            --no-info \
+            --no-separator \
+            --pointer='▸' \
+            --prompt='❯ ' \
+            --color='bg:#1e1e2e,fg:#cdd6f4,bg+:#313244,fg+:#cdd6f4,hl:#f9e2af,hl+:#fab387,pointer:#f9e2af,prompt:#cba6f7,gutter:#1e1e2e,border:#6c7086,label:#89b4fa,header:#cba6f7')
+
+        if [[ "$selection" == EDIT:* ]]; then
+            selection="${selection#EDIT:}"
+            selection="${selection#*$'\t'}"
+            printf '%s' "$selection" > "$editfile"
+            nvim -u NONE \
+                -c "set noswapfile" \
+                -c "set nobackup" \
+                -c "set noundofile" \
+                -c "set laststatus=0" \
+                -c "set noruler" \
+                -c "set noshowcmd" \
+                -c "set shortmess+=F" \
+                -c "set filetype=sh" \
+                -c "syntax on" \
+                "$editfile"
+            selection=$(cat "$editfile")
+        else
+            selection="${selection#*$'\t'}"
+        fi
+
+        rm -f "$editfile" "$listfile"
+
+        if [[ -n "$selection" ]]; then
+            LBUFFER="$selection"
+            RBUFFER=""
+        fi
+        zle reset-prompt
+        rm -f "$tmpfile"
+        return
+    fi
+
+    local wrapper=$(mktemp)
+    cat > "$wrapper" << INNERSCRIPT
+#!/bin/bash
+tmpfile="$tmpfile"
+listfile="$listfile"
+editfile="$editfile"
+
+selection=\$(cat "\$listfile" | fzf \\
+    --ansi \\
+    --exact \\
+    --delimiter=$'\t' --nth=2.. \\
+    --algo=v2 --tiebreak=begin,length,index \\
+    --no-sort \\
+    --layout=reverse \\
+    --query="$query" \\
+    --bind 'esc:abort' \\
+    --bind 'ctrl-d:half-page-down' \\
+    --bind 'ctrl-u:half-page-up' \\
+    --bind 'ctrl-x:become(echo EDIT:{})' \\
+    --no-info \\
+    --no-separator \\
+    --pointer='▸' \\
+    --prompt='❯ ' \\
+    --color='bg:#1e1e2e,fg:#cdd6f4,bg+:#313244,fg+:#cdd6f4,hl:#f9e2af,hl+:#fab387,pointer:#f9e2af,prompt:#cba6f7,gutter:#1e1e2e,border:#6c7086,label:#89b4fa,header:#cba6f7')
+
+if [[ "\$selection" == EDIT:* ]]; then
+    selection="\${selection#EDIT:}"
+    selection="\${selection#*$'\t'}"
+    printf '%s' "\$selection" > "\$editfile"
+    nvim -u NONE \\
+        -c "set noswapfile" \\
+        -c "set nobackup" \\
+        -c "set noundofile" \\
+        -c "set laststatus=0" \\
+        -c "set noruler" \\
+        -c "set noshowcmd" \\
+        -c "set shortmess+=F" \\
+        -c "set filetype=sh" \\
+        -c "syntax on" \\
+        "\$editfile"
+    cat "\$editfile" > "\$tmpfile"
+else
+    selection="\${selection#*$'\t'}"
+    printf '%s' "\$selection" > "\$tmpfile"
+fi
+INNERSCRIPT
+
+    chmod +x "$wrapper"
+
+    tmux display-popup -E -w 72% -h 50% \
+        -b rounded \
+        -S 'fg=#6c7086' \
+        -s 'bg=#1e1e2e' \
+        -T '  Zsh History ' \
+        "$wrapper"
+
+    local selection=$(cat "$tmpfile" 2>/dev/null)
+    rm -f "$tmpfile" "$wrapper" "$editfile" "$listfile"
+
+    selection="${selection%%$'\n'}"
+    selection="${selection%"${selection##*[![:space:]]}"}"
+
+    if [[ -n "$selection" ]]; then
+        LBUFFER="$selection"
+        RBUFFER=""
+    fi
+
+    zle reset-prompt
+}
+
 # Edit current command line in nvim popup (C-x C-e)
 _edit_command_line_popup() {
     emulate -L zsh
@@ -280,7 +447,7 @@ _edit_command_line_popup() {
         -b rounded \
         -S 'fg=#6c7086' \
         -s 'bg=#1e1e2e' \
-        -T ' ✏️ Edit Command ' \
+        -T '  Edit Command ' \
         "nvim -u NONE \
             -c 'set noswapfile' \
             -c 'set nobackup' \
@@ -390,7 +557,7 @@ INNERSCRIPT
         -b rounded \
         -S 'fg=#6c7086' \
         -s 'bg=#1e1e2e' \
-        -T ' 📁 Zoxide Jump ' \
+        -T '  Zoxide Jump ' \
         "$wrapper"
     
     local selection=$(cat "$tmpfile" 2>/dev/null)
@@ -409,10 +576,12 @@ INNERSCRIPT
 }
 
 zle -N _atuin_tmux_popup
+zle -N _zsh_history_tmux_popup
 zle -N _edit_command_line_popup
 zle -N _zoxide_tmux_popup
 
-# Removed: ghostcomplete now owns Ctrl+r
-# bindkey '^r' _atuin_tmux_popup
+# Fast local history on Ctrl+r, keep Atuin popup on Ctrl+x Ctrl+r
+bindkey '^r' _zsh_history_tmux_popup
+bindkey '^x^r' _atuin_tmux_popup
 bindkey '^x^e' _edit_command_line_popup
 bindkey '^g' _zoxide_tmux_popup
