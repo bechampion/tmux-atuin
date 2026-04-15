@@ -15,23 +15,41 @@ _atuin_tmux_popup() {
     local db="$HOME/.local/share/atuin/history.db"
     
     # SQL query: successful commands, newest first, deduplicated by command
+    # Optimized by limiting to recent rows before deduplication
     local sql="
-        SELECT 
-            CASE 
+        WITH recent AS (
+            SELECT timestamp, duration, command
+            FROM history
+            WHERE exit = 0 AND deleted_at IS NULL
+            ORDER BY timestamp DESC
+            LIMIT 20000
+        ),
+        latest_per_cmd AS (
+            SELECT
+                timestamp,
+                duration,
+                command,
+                ROW_NUMBER() OVER (
+                    PARTITION BY command
+                    ORDER BY timestamp DESC
+                ) AS rn
+            FROM recent
+        )
+        SELECT
+            CASE
                 WHEN (strftime('%s','now') - timestamp/1000000000) < 60 THEN printf('%3ds', strftime('%s','now') - timestamp/1000000000)
                 WHEN (strftime('%s','now') - timestamp/1000000000) < 3600 THEN printf('%3dm', (strftime('%s','now') - timestamp/1000000000) / 60)
                 WHEN (strftime('%s','now') - timestamp/1000000000) < 86400 THEN printf('%3dh', (strftime('%s','now') - timestamp/1000000000) / 3600)
                 ELSE printf('%3dd', (strftime('%s','now') - timestamp/1000000000) / 86400)
             END,
-            CASE 
+            CASE
                 WHEN duration < 1000000000 THEN printf('%6dms', duration/1000000)
                 ELSE printf('%7ds', duration/1000000000)
             END,
             replace(replace(command, char(10), ' '), char(13), ' ')
-        FROM history 
-        WHERE exit = 0 AND deleted_at IS NULL 
-        GROUP BY command
-        ORDER BY MAX(timestamp) DESC 
+        FROM latest_per_cmd
+        WHERE rn = 1
+        ORDER BY timestamp DESC
         LIMIT 3000
     "
     
@@ -108,22 +126,39 @@ tmpfile="$tmpfile"
 editfile="$editfile"
 
 sql="
-    SELECT 
-        CASE 
+    WITH recent AS (
+        SELECT timestamp, duration, command
+        FROM history
+        WHERE exit = 0 AND deleted_at IS NULL
+        ORDER BY timestamp DESC
+        LIMIT 20000
+    ),
+    latest_per_cmd AS (
+        SELECT
+            timestamp,
+            duration,
+            command,
+            ROW_NUMBER() OVER (
+                PARTITION BY command
+                ORDER BY timestamp DESC
+            ) AS rn
+        FROM recent
+    )
+    SELECT
+        CASE
             WHEN (strftime('%s','now') - timestamp/1000000000) < 60 THEN printf('%3ds', strftime('%s','now') - timestamp/1000000000)
             WHEN (strftime('%s','now') - timestamp/1000000000) < 3600 THEN printf('%3dm', (strftime('%s','now') - timestamp/1000000000) / 60)
             WHEN (strftime('%s','now') - timestamp/1000000000) < 86400 THEN printf('%3dh', (strftime('%s','now') - timestamp/1000000000) / 3600)
             ELSE printf('%3dd', (strftime('%s','now') - timestamp/1000000000) / 86400)
         END,
-        CASE 
+        CASE
             WHEN duration < 1000000000 THEN printf('%6dms', duration/1000000)
             ELSE printf('%7ds', duration/1000000000)
         END,
         replace(replace(command, char(10), ' '), char(13), ' ')
-    FROM history 
-    WHERE exit = 0 AND deleted_at IS NULL 
-    GROUP BY command
-    ORDER BY MAX(timestamp) DESC 
+    FROM latest_per_cmd
+    WHERE rn = 1
+    ORDER BY timestamp DESC
     LIMIT 3000
 "
 
